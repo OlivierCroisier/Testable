@@ -18,17 +18,13 @@ class UserTest {
 
         // Non testable !
         // assertEquals("James Bond", user.secretName);
-        // assertEquals("James Bond", user.getSecretName());
+        // assertEquals("James Bond", user.password);
 
-        //region (...) Testable
-        if (user instanceof TestableUser) {
-            TestableUser testableUser = (TestableUser) user;
-            assertEquals("James Bond", testableUser.secretName$());
-            assertEquals("password007", testableUser.password$());
-        } else {
-            System.out.println("User is not an instance of TestableUser ! The agent may not be attached.");
-        }
-        //endregion
+        // region (...) Testable
+        TestableUser testableUser = (TestableUser) user;
+        assertEquals("James Bond", testableUser.secretName$());
+        assertEquals("password007", testableUser.password$());
+        // endregion
     }
 
 }
