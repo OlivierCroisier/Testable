@@ -1,7 +1,5 @@
-package net.mokatech.testable.sample.superclass1;
+package net.mokatech.testable.sample.superclass;
 
-import net.mokatech.testable.sample.TestableUser;
-import net.mokatech.testable.sample.User;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,7 +12,6 @@ class DogTest {
         Dog dog =  new Dog("Woofy");
 
         TestableDog testableDog = (TestableDog) dog;
-        //assertEquals("Dog", testableDog.type$());
         assertEquals("Woofy", testableDog.name$());
     }
 

@@ -1,4 +1,4 @@
-package net.mokatech.testable.sample.superclass1;
+package net.mokatech.testable.sample.superclass;
 
 public class Animal {
 

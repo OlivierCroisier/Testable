@@ -9,8 +9,8 @@ public class User {
     private String password;
 
     public User(String name, String password) {
-        this.secretName = name;
         this.password = password;
+        this.secretName = name;
     }
 
 }
