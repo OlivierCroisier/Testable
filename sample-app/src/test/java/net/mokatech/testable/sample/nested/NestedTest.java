@@ -8,8 +8,8 @@ class NestedTest {
 
     @Test
     void shouldGenerateDistinctInterfacesForNestedClassesWithTheSameSimpleName() {
-        assertEquals(1, ((TestableLeft$Node) new Left.Node()).value$());
-        assertEquals("right", ((TestableRight$Node) new Right.Node()).value$());
+        assertEquals(1, ((TestableLeft$Node) new Left.Node()).value$$());
+        assertEquals("right", ((TestableRight$Node) new Right.Node()).value$$());
     }
 
 }

@@ -23,6 +23,10 @@ public class Box<T extends Comparable<T>, U extends Number & Serializable, V> {
         this.grid = grid;
     }
 
+    private boolean isGreaterThan(T other) {
+        return value.compareTo(other) > 0;
+    }
+
     /** Inner class using its enclosing class' type variable: the field is exposed with its erased type. */
     @Testable
     public class Inner {
@@ -33,6 +37,11 @@ public class Box<T extends Comparable<T>, U extends Number & Serializable, V> {
         public Inner(T outerValue, String name) {
             this.outerValue = outerValue;
             this.name = name;
+        }
+
+        /** Uses the enclosing class' type variable: exposed with its erased types. */
+        private T orDefault(T other) {
+            return outerValue != null ? outerValue : other;
         }
     }
 }

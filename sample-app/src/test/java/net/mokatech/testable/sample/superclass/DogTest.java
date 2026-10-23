@@ -12,7 +12,7 @@ class DogTest {
         Dog dog =  new Dog("Woofy");
 
         TestableDog testableDog = (TestableDog) dog;
-        assertEquals("Woofy", testableDog.name$());
+        assertEquals("Woofy", testableDog.name$$());
     }
 
 }

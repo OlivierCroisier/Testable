@@ -10,16 +10,16 @@ class VaultTest {
     @Test
     void shouldExposeAccessibleFieldTypes() {
         TestableVault testableVault = (TestableVault) new Vault();
-        assertNotNull(testableVault.publicNested$());
-        assertNotNull(testableVault.packageNested$());
+        assertNotNull(testableVault.publicNested$$());
+        assertNotNull(testableVault.packageNested$$());
     }
 
     @Test
     void shouldIgnoreInaccessibleFieldTypes() {
-        assertThrows(NoSuchMethodException.class, () -> TestableVault.class.getMethod("secret$"));
-        assertThrows(NoSuchMethodException.class, () -> TestableVault.class.getMethod("secrets$"));
-        assertThrows(NoSuchMethodException.class, () -> TestableVault.class.getMethod("secretArray$"));
-        assertThrows(NoSuchMethodException.class, () -> TestableVault.class.getMethod("protectedNested$"));
+        assertThrows(NoSuchMethodException.class, () -> TestableVault.class.getMethod("secret$$"));
+        assertThrows(NoSuchMethodException.class, () -> TestableVault.class.getMethod("secrets$$"));
+        assertThrows(NoSuchMethodException.class, () -> TestableVault.class.getMethod("secretArray$$"));
+        assertThrows(NoSuchMethodException.class, () -> TestableVault.class.getMethod("protectedNested$$"));
     }
 
 }

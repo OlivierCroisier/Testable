@@ -22,8 +22,8 @@ class UserTest {
 
         // region (...) Testable
         TestableUser testableUser = (TestableUser) user;
-        assertEquals("James Bond", testableUser.secretName$());
-        assertEquals("password007", testableUser.password$());
+        assertEquals("James Bond", testableUser.secretName$$());
+        assertEquals("password007", testableUser.password$$());
         // endregion
     }
 

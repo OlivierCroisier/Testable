@@ -8,17 +8,17 @@ class PackageTest {
 
     @Test
     void shouldExposeClassAnnotatedBothDirectlyAndThroughItsPackage() {
-        assertEquals("annotated", ((TestableAnnotatedInPackage) new AnnotatedInPackage()).value$());
+        assertEquals("annotated", ((TestableAnnotatedInPackage) new AnnotatedInPackage()).value$$());
     }
 
     @Test
     void shouldExposeClassAnnotatedThroughItsPackage() {
-        assertEquals(42L, ((TestableNotAnnotatedInPackage) new NotAnnotatedInPackage()).value$());
+        assertEquals(42L, ((TestableNotAnnotatedInPackage) new NotAnnotatedInPackage()).value$$());
     }
 
     @Test
     void shouldExposeEnumAnnotatedThroughItsPackage() {
-        assertEquals(7, ((TestablePackageEnum) (Object) PackageEnum.INSTANCE).counter$());
+        assertEquals(7, ((TestablePackageEnum) (Object) PackageEnum.INSTANCE).counter$$());
     }
 
 }
