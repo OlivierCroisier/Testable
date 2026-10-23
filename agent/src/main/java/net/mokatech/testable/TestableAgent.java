@@ -28,14 +28,13 @@ public class TestableAgent {
 
         new AgentBuilder.Default()
                 .with(new Listener("verbose".equals(arguments)))
-                .type(TestableAgent::isTestable)
+                // Ne retient que les classes dont l'interface TestableFoo existe : les autres ne sont pas réécrites du tout
+                .type((typeDescription, classLoader, module, classBeingRedefined, protectionDomain) ->
+                              isTestable(typeDescription) && findAccessorInterface(typeDescription, classLoader) != null)
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
 
                     // Trouve l'interface TestableFoo générée pour cette classe
                     TypeDescription accessorInterface = findAccessorInterface(typeDescription, classLoader);
-                    if (accessorInterface == null) {
-                        return builder;
-                    }
 
                     DynamicType.Builder<?> currentBuilder = builder.implement(accessorInterface);
                     for (MethodDescription.InDefinedShape method : accessorInterface.getDeclaredMethods()) {

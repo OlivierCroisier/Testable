@@ -13,6 +13,7 @@
         <module>processor</module>
         <module>agent</module>
         <module>api</module>
+        <module>maven-plugin</module>
     </modules>
 
     <properties>
