@@ -13,6 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <lib.lombok.version>1.18.42</lib.lombok.version>
+        <lib.testable.version>1.0-SNAPSHOT</lib.testable.version>
     </properties>
 
     <dependencyManagement>
@@ -31,13 +32,12 @@
         <dependency>
             <groupId>net.mokatech.testable</groupId>
             <artifactId>api</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <version>${lib.testable.version}</version>
         </dependency>
         <dependency>
             <groupId>net.mokatech.testable</groupId>
             <artifactId>agent</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${lib.testable.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -56,12 +56,12 @@
     <build>
         <plugins>
 
-            <!-- Compilation -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.16.0</version>
                 <executions>
+                    <!-- Compilation, avec les processeurs d'annotations de l'application -->
                     <execution>
                         <id>default-compile</id>
                         <configuration>
@@ -75,6 +75,7 @@
                             </annotationProcessorPaths>
                         </configuration>
                     </execution>
+                    <!-- Génération des interfaces Testable à partir des sources principales, compilées ensuite avec les tests -->
                     <execution>
                         <id>testable-generation</id>
                         <phase>generate-test-sources</phase>
@@ -87,81 +88,59 @@
                                 <path>
                                     <groupId>net.mokatech.testable</groupId>
                                     <artifactId>processor</artifactId>
-                                    <version>1.0-SNAPSHOT</version>
+                                    <version>${lib.testable.version}</version>
                                 </path>
                             </annotationProcessorPaths>
-                            <annotationProcessors>
-                                <annotationProcessor>net.mokatech.testable.TestableAnnotationProcessor</annotationProcessor>
-                            </annotationProcessors>
-                            <generatedSourcesDirectory>${project.build.directory}/generated-test-sources</generatedSourcesDirectory>
+                            <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/testable</generatedSourcesDirectory>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 
-            <!-- Ajout de generated-test-sources au classpath de test -->
+            <!-- Ajout des interfaces générées aux sources de test (testCompile vide son propre répertoire generated-test-sources/test-annotations) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>3.6.1</version>
                 <executions>
                     <execution>
-                        <id>add-test-sources</id>
-                        <phase>generate-test-sources</phase>
                         <goals>
                             <goal>add-test-source</goal>
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${project.build.directory}/generated-test-sources</source>
+                                <source>${project.build.directory}/generated-test-sources/testable</source>
                             </sources>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 
-            <!-- Récupération de l'agent -->
+            <!-- Chemin du jar de l'agent, exposé dans la propriété ${net.mokatech.testable:agent:jar} -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.11.0</version>
                 <executions>
                     <execution>
-                        <id>copy</id>
-                        <phase>generate-test-resources</phase>
                         <goals>
-                            <goal>copy</goal>
+                            <goal>properties</goal>
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <artifactItems>
-                        <artifactItem>
-                            <groupId>net.mokatech.testable</groupId>
-                            <artifactId>agent</artifactId>
-                            <version>1.0-SNAPSHOT</version>
-                            <type>jar</type>
-                            <overWrite>false</overWrite>
-                            <outputDirectory>${project.build.directory}/libs</outputDirectory>
-                            <destFileName>testable-agent.jar</destFileName>
-                        </artifactItem>
-                    </artifactItems>
-                    <overWriteReleases>false</overWriteReleases>
-                    <overWriteSnapshots>true</overWriteSnapshots>
-                </configuration>
             </plugin>
 
-            <!-- Tests unitaires -->
+            <!-- Tests unitaires, avec l'agent -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.6.0</version>
                 <configuration>
-                    <argLine>-javaagent:${project.build.directory}/libs/testable-agent.jar</argLine>
+                    <argLine>-javaagent:${net.mokatech.testable:agent:jar}</argLine>
                 </configuration>
             </plugin>
-        </plugins>
 
+        </plugins>
     </build>
 
 </project>

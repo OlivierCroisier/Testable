@@ -112,7 +112,7 @@ If a method has no matching field, the interface is out of date (for example, th
 
 Pass `verbose` as the agent argument (`-javaagent:testable-agent.jar=verbose`) to also log each transformed class.
 
-The interface must be added **before the class is loaded**, because the JVM does not let a retransformation change a class's hierarchy. This is why the agent must be attached with `-javaagent` and cannot be attached dynamically.
+The interface must be added **before the class is loaded**, because the JVM does not let a retransformation change a class's hierarchy. Attaching the agent with `-javaagent` guarantees that it is active before any class is loaded. It does not support dynamic attachment.
 
 ## Project layout
 
@@ -125,12 +125,85 @@ The interface must be added **before the class is loaded**, because the JVM does
 
 ## Using it in a Maven project
 
-The `sample-app/pom.xml` file is the reference setup. It has four parts:
+The `sample-app/pom.xml` file is the reference setup. Declare the `api` dependency (compile scope) and the `agent` dependency (test scope), then configure four plugins:
 
-1. **Main compilation** stays unchanged and keeps its own annotation processors, such as Lombok.
-2. **A second `maven-compiler-plugin` execution** runs in `generate-test-sources` with `<proc>only</proc>` and only the Testable processor. It writes the interfaces to `target/generated-test-sources`, so they never reach `target/classes` or the production jar.
-3. **`build-helper-maven-plugin`** adds `target/generated-test-sources` as a test source root.
-4. **`maven-dependency-plugin`** copies the agent jar to `target/libs/testable-agent.jar`, and **surefire** starts the test JVM with `-javaagent:${project.build.directory}/libs/testable-agent.jar`.
+```xml
+<properties>
+    <lib.testable.version>1.0-SNAPSHOT</lib.testable.version>
+</properties>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <executions>
+                <!-- The default-compile execution is unchanged, with the application's own processors -->
+                <execution>
+                    <id>testable-generation</id>
+                    <phase>generate-test-sources</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                    <configuration>
+                        <proc>only</proc>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>net.mokatech.testable</groupId>
+                                <artifactId>processor</artifactId>
+                                <version>${lib.testable.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/testable</generatedSourcesDirectory>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>add-test-source</goal>
+                    </goals>
+                    <configuration>
+                        <sources>
+                            <source>${project.build.directory}/generated-test-sources/testable</source>
+                        </sources>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>properties</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+                <argLine>-javaagent:${net.mokatech.testable:agent:jar}</argLine>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+1. **`maven-compiler-plugin`**: the main compilation stays unchanged and keeps its own annotation processors, such as Lombok. A second execution runs the Testable processor alone over the main sources, in `generate-test-sources`. `<proc>only</proc>` means it compiles nothing, so the interfaces never reach `target/classes` or the production jar.
+2. **`build-helper-maven-plugin`** adds the generated interfaces to the test sources. A dedicated directory is required: `testCompile` empties its default `generated-test-sources/test-annotations` directory before compiling.
+3. **`maven-dependency-plugin`**'s `properties` goal exposes the path of each dependency's jar as a `groupId:artifactId:type` property. For the agent, that's `${net.mokatech.testable:agent:jar}`.
+4. **`maven-surefire-plugin`** starts the test JVM with that jar as a Java agent. If the build already sets an `argLine`, for example for JaCoCo, write `<argLine>@{argLine} -javaagent:...</argLine>` so that both apply.
 
 ## Building
 
