@@ -50,7 +50,7 @@
     <build>
         <plugins>
 
-            <!-- Compilation, avec les processeurs d'annotations de l'application -->
+            <!-- Compilation, with the application's own annotation processors -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -67,7 +67,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Génération des interfaces Testable, et ajout de l'agent à l'argLine des tests -->
+            <!-- Testable interfaces generation, and agent added to the tests' argLine -->
             <plugin>
                 <groupId>net.mokatech.testable</groupId>
                 <artifactId>testable-maven-plugin</artifactId>
@@ -82,7 +82,7 @@
                 </executions>
             </plugin>
 
-            <!-- Tests unitaires -->
+            <!-- Unit tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

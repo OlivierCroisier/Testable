@@ -61,7 +61,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.16.0</version>
                 <executions>
-                    <!-- Compilation, avec les processeurs d'annotations de l'application -->
+                    <!-- Compilation, with the application's own annotation processors -->
                     <execution>
                         <id>default-compile</id>
                         <configuration>
@@ -75,7 +75,7 @@
                             </annotationProcessorPaths>
                         </configuration>
                     </execution>
-                    <!-- Génération des interfaces Testable à partir des sources principales, compilées ensuite avec les tests -->
+                    <!-- Testable interfaces generation from the main sources, then compiled with the tests -->
                     <execution>
                         <id>testable-generation</id>
                         <phase>generate-test-sources</phase>
@@ -97,7 +97,7 @@
                 </executions>
             </plugin>
 
-            <!-- Ajout des interfaces générées aux sources de test (testCompile vide son propre répertoire generated-test-sources/test-annotations) -->
+            <!-- Adds the generated interfaces to the test sources (testCompile empties its own generated-test-sources/test-annotations directory) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -116,7 +116,7 @@
                 </executions>
             </plugin>
 
-            <!-- Chemin du jar de l'agent, exposé dans la propriété ${net.mokatech.testable:agent:jar} -->
+            <!-- Path of the agent jar, exposed as the ${net.mokatech.testable:agent:jar} property -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -130,7 +130,7 @@
                 </executions>
             </plugin>
 
-            <!-- Tests unitaires, avec l'agent -->
+            <!-- Unit tests, with the agent -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
