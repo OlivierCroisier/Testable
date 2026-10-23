@@ -5,18 +5,21 @@ import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.FieldAccessor;
+import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.pool.TypePool;
 import net.mokatech.testable.api.Testable;
 
 import java.lang.instrument.Instrumentation;
 
+import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
+
 public class TestableAgent {
 
     public static void premain(String arguments, Instrumentation instrumentation) {
 
         new AgentBuilder.Default()
-                .type(ElementMatchers.isAnnotatedWith(Testable.class))
+                .type(getOr())
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
 
                     System.out.println("Transforming class " + typeDescription.getName());
@@ -49,6 +52,11 @@ public class TestableAgent {
                     }
                 })
                 .installOn(instrumentation);
+    }
+
+    private static ElementMatcher.Junction<TypeDescription> getOr() {
+        return isAnnotatedWith(Testable.class)
+                .or(td -> td.getPackage() != null && td.getPackage().getDeclaredAnnotations().isAnnotationPresent(Testable.class));
     }
 
     private static String deriveFieldName(String methodName) {
