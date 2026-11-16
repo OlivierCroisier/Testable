@@ -13,4 +13,9 @@ public class Dog extends Animal {
         super("dog");
         this.name = name;
     }
+
+    @Override
+    protected String sound() {
+        return "Woof";
+    }
 }

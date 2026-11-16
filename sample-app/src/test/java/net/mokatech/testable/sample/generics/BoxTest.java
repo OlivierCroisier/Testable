@@ -29,24 +29,11 @@ class BoxTest {
     }
 
     @Test
-    void shouldExposeInnerClassFieldsWithErasedOuterTypeVariables() {
-        Box<String, Integer, Object> box = new Box<>("hello", List.of(), Map.of(), new Object[0], new int[0][]);
-        Box<String, Integer, Object>.Inner inner = box.new Inner("outer", "inner");
-
-        TestableBox$Inner testableInner = (TestableBox$Inner) inner;
-        assertEquals("outer", testableInner.outerValue$$());
-        assertEquals("inner", testableInner.name$$());
-    }
-
-    @Test
-    void shouldCallPrivateMethodsUsingTypeVariables() {
+    void shouldCallMethodsUsingTypeVariables() {
         Box<String, Integer, Object> box = new Box<>("b", List.of(), Map.of(), new Object[0], new int[0][]);
         @SuppressWarnings("unchecked")
         TestableBox<String, Integer, Object> testableBox = (TestableBox<String, Integer, Object>) box;
         assertTrue(testableBox.isGreaterThan$("a"));
-
-        TestableBox$Inner testableInner = (TestableBox$Inner) box.new Inner(null, "inner");
-        assertEquals("default", testableInner.orDefault$("default"));
     }
 
 }

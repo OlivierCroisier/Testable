@@ -13,6 +13,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface TestableInterface {
 
-    /** Binary name of the testable class (e.g. {@code com.example.Outer$Inner}). */
+    /** Binary name of the testable class (e.g. {@code com.example.Outer$Nested}). */
     String value();
 }

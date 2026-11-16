@@ -12,24 +12,27 @@ import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.pool.TypePool;
 import net.bytebuddy.utility.JavaModule;
-import net.mokatech.testable.api.Testable;
 import net.mokatech.testable.api.TestableInterface;
 
 import java.lang.instrument.Instrumentation;
+import java.util.List;
 
 import static net.bytebuddy.matcher.ElementMatchers.is;
-import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
-import static net.bytebuddy.matcher.ElementMatchers.isPrivate;
+import static net.bytebuddy.matcher.ElementMatchers.isAbstract;
 import static net.bytebuddy.matcher.ElementMatchers.isStatic;
+import static net.bytebuddy.matcher.ElementMatchers.isSynthetic;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.not;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
 public class TestableAgent {
 
-    /** Same conventions as the processor: foo$$() for the field foo, foo$(...) for the private method foo. */
+    /** Same conventions as the processor: foo$$() for the field foo, foo$(...) for the method foo. */
     private static final String FIELD_SUFFIX = "$$";
     private static final String METHOD_SUFFIX = "$";
+
+    /** Same as the processor: classes of these packages are never testable. */
+    private static final List<String> EXCLUDED_PACKAGES = List.of("java.", "javax.", "jdk.", "sun.", "com.sun.");
 
     /**
      * @param arguments "verbose" to log each transformed class
@@ -40,7 +43,7 @@ public class TestableAgent {
                 .with(new Listener("verbose".equals(arguments)))
                 // Only keeps the classes whose TestableFoo interface exists: the others are not rewritten at all
                 .type((typeDescription, classLoader, module, classBeingRedefined, protectionDomain) ->
-                              isTestable(typeDescription) && findAccessorInterface(typeDescription, classLoader) != null)
+                              isCandidate(typeDescription, classLoader) && findAccessorInterface(typeDescription, classLoader) != null)
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
 
                     // Finds the TestableFoo interface generated for this class
@@ -53,22 +56,23 @@ public class TestableAgent {
                         if (method.getName().endsWith(FIELD_SUFFIX)) {
                             String fieldName = method.getName().substring(0, method.getName().length() - FIELD_SUFFIX.length());
                             // If it is missing, the interface is out of date: better fail here than with an AbstractMethodError in the test
-                            if (typeDescription.getDeclaredFields().filter(named(fieldName).and(isPrivate()).and(not(isStatic()))).isEmpty()) {
+                            if (typeDescription.getDeclaredFields().filter(named(fieldName).and(not(isStatic()))).isEmpty()) {
                                 throw outOfDate("field " + fieldName, typeDescription, accessorInterface);
                             }
+                            // Dynamic typing: the accessor may return the Testable interface of the field's class
                             currentBuilder = currentBuilder
                                     .method(is(method))
-                                    .intercept(FieldAccessor.ofField(fieldName));
+                                    .intercept(FieldAccessor.ofField(fieldName).withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC));
                             continue;
                         }
 
-                        // foo$(...) delegates to the private method foo with the same parameter types (after erasure)
+                        // foo$(...) delegates to the method foo with the same parameter types (after erasure)
                         String methodName = method.getName().substring(0, method.getName().length() - METHOD_SUFFIX.length());
                         MethodList<MethodDescription.InDefinedShape> targets = typeDescription.getDeclaredMethods()
-                                .filter(named(methodName).and(isPrivate()).and(not(isStatic()))
+                                .filter(named(methodName).and(not(isStatic())).and(not(isAbstract())).and(not(isSynthetic()))
                                                          .and(takesArguments(method.getParameters().asTypeList().asErasures())));
                         if (targets.size() != 1) {
-                            throw outOfDate("private method matching " + method.toGenericString(), typeDescription, accessorInterface);
+                            throw outOfDate("method matching " + method.toGenericString(), typeDescription, accessorInterface);
                         }
                         currentBuilder = currentBuilder
                                 .method(is(method))
@@ -83,36 +87,28 @@ public class TestableAgent {
     }
 
     /**
-     * Same candidates as the processor: classes and enums that are annotated or have an annotated field or method, or top-level classes and enums of an annotated package.
+     * Cheap pre-filter: @Testable is not kept in the class files, so a class is a candidate if the class file of its Testable interface exists.
      */
-    private static boolean isTestable(TypeDescription type) {
-        if (type.isInterface() || type.isAnonymousType() || type.isLocalType()) {
+    private static boolean isCandidate(TypeDescription type, ClassLoader classLoader) {
+        if (classLoader == null || type.isInterface() || type.isAnonymousType() || type.isLocalType() || type.isSynthetic()) {
             return false;
         }
-        if (type.getDeclaredAnnotations().isAnnotationPresent(Testable.class)
-            || !type.getDeclaredFields().filter(isAnnotatedWith(Testable.class)).isEmpty()
-            || !type.getDeclaredMethods().filter(isAnnotatedWith(Testable.class)).isEmpty()) {
-            return true;
-        }
         PackageDescription packageDescription = type.getPackage();
-        return !type.isMemberType()
-               && packageDescription != null
-               && packageDescription.getDeclaredAnnotations().isAnnotationPresent(Testable.class);
+        if (packageDescription == null || packageDescription.getName().isEmpty()) {
+            return false;
+        }
+        String packageName = packageDescription.getName() + ".";
+        if (EXCLUDED_PACKAGES.stream().anyMatch(packageName::startsWith)) {
+            return false;
+        }
+        return classLoader.getResource(interfaceName(type).replace('.', '/') + ".class") != null;
     }
 
     /**
-     * Returns the interface generated for this class, or null if there is none (default package, test class in an annotated package...).
+     * Returns the interface generated for this class, or null if there is none (or if the interface with that name was not generated for it).
      */
     private static TypeDescription findAccessorInterface(TypeDescription type, ClassLoader classLoader) {
-        PackageDescription packageDescription = type.getPackage();
-        if (packageDescription == null || packageDescription.getName().isEmpty()) {
-            return null;
-        }
-
-        // Same convention as the processor: Testable + binary name without the package (Outer$Inner)
-        String packageName = packageDescription.getName();
-        String interfaceName = packageName + ".Testable" + type.getName().substring(packageName.length() + 1);
-        TypePool.Resolution resolution = TypePool.Default.of(classLoader).describe(interfaceName);
+        TypePool.Resolution resolution = TypePool.Default.of(classLoader).describe(interfaceName(type));
         if (!resolution.isResolved()) {
             return null;
         }
@@ -124,6 +120,12 @@ public class TestableAgent {
             return null;
         }
         return accessorInterface;
+    }
+
+    /** Same convention as the processor: Testable + binary name without the package (Outer$Nested). */
+    private static String interfaceName(TypeDescription type) {
+        String packageName = type.getPackage().getName();
+        return packageName + ".Testable" + type.getName().substring(packageName.length() + 1);
     }
 
     private static IllegalStateException outOfDate(String member, TypeDescription type, TypeDescription accessorInterface) {

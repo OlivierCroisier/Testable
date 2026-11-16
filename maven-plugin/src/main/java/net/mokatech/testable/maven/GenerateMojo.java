@@ -54,6 +54,10 @@ public class GenerateMojo extends AbstractMojo {
     @Parameter(property = "testable.skip", defaultValue = "false")
     private boolean skip;
 
+    /** Also reports each generated interface. */
+    @Parameter(property = "testable.verbose", defaultValue = "false")
+    private boolean verbose;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
@@ -132,6 +136,9 @@ public class GenerateMojo extends AbstractMojo {
         if (encoding != null) {
             options.add("-encoding");
             options.add(encoding);
+        }
+        if (verbose) {
+            options.add("-Atestable.verbose");
         }
         return options;
     }

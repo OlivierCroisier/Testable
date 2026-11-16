@@ -17,8 +17,10 @@ class CalculatorTest {
     private final TestableCalculator calculator = (TestableCalculator) new Calculator();
 
     @Test
-    void shouldCallPrivateMethods() {
+    void shouldCallMethodsWhateverTheirVisibility() {
         assertEquals(5, calculator.add$(2, 3));
+        assertEquals(4, calculator.doubled$(2));
+        assertEquals(-2, calculator.negated$(2));
         assertEquals("int:1", calculator.format$(1));
         assertEquals("string:a", calculator.format$("a"));
         assertEquals(7, calculator.max$(List.of(3, 7, 5)));
@@ -27,12 +29,13 @@ class CalculatorTest {
     }
 
     @Test
-    void shouldCallPrivateMethodsChangingState() {
+    void shouldCallMethodsChangingState() {
         calculator.accumulate$(5);
         calculator.accumulate$(7);
 
         assertEquals(2, calculator.count$$());
         assertEquals(12, calculator.total$$());
+        assertEquals(7, calculator.lastValue$$());
     }
 
     @Test
@@ -53,24 +56,13 @@ class CalculatorTest {
     }
 
     @Test
-    void shouldIgnoreInexpressibleAmbiguousAndStaticMethods() {
+    void shouldIgnoreInexpressibleAndStaticMethods() {
         Set<String> methods = Arrays.stream(TestableCalculator.class.getDeclaredMethods())
                                     .map(method -> method.getName() + "/" + method.getParameterCount())
                                     .collect(Collectors.toSet());
 
         assertFalse(methods.contains("describe$/1"));
         assertFalse(methods.contains("twice$/1"));
-        assertFalse(methods.contains("legacy$$/0"));
-    }
-
-    @Test
-    void shouldIgnoreNonPrivateMembers() {
-        Set<String> methods = Arrays.stream(TestableCalculator.class.getDeclaredMethods())
-                                    .map(method -> method.getName())
-                                    .collect(Collectors.toSet());
-
-        assertFalse(methods.contains("lastValue$$"));
-        assertFalse(methods.contains("doubled$"));
     }
 
 }
